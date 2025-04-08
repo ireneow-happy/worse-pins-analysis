@@ -45,8 +45,9 @@ if uploaded_file:
     df['Shift Direction'] = df.apply(detect_shift_direction, axis=1)
     direction_summary = df.groupby(['DUT+Pad', 'Shift Direction']).size().unstack(fill_value=0)
     direction_summary['Total'] = direction_summary.sum(axis=1)
-    direction_summary['Dominant'] = direction_summary.drop(columns='Total').idxmax(axis=1)
-    direction_summary['Dominant %'] = direction_summary.drop(columns='Total').max(axis=1) / direction_summary['Total']
+    direction_columns = ['Up', 'Down', 'Left', 'Right']
+    direction_summary['Dominant'] = direction_summary[direction_columns].idxmax(axis=1)
+    direction_summary['Dominant %'] = direction_summary[direction_columns].max(axis=1) / direction_summary['Total']
 
     df['On Rim'] = df[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
     rim_summary = df.groupby('DUT+Pad')['On Rim'].agg(['sum', 'count'])
