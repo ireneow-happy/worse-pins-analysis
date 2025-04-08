@@ -123,7 +123,7 @@ if uploaded_file:
     ax.set_title("On Rim % vs. TD Order Bins (All Probes)")
     ax.set_ylabel("On Rim %")
     ax.set_xlabel("TD Order Bins")
-    ax.set_ylim(0, 100)
+    
     ax.grid(True, axis='y')
     st.pyplot(fig)
 
@@ -158,3 +158,36 @@ if uploaded_file:
         ax2.grid(True, axis='y')
         st.pyplot(fig2)
         st.dataframe(probe_rim.reset_index())
+
+
+    # =====================================
+    # 🔝 Rim % 前幾高針位的趨勢分析（按 TD Order 區段）
+    # =====================================
+    st.subheader("Top Rim % Probes: Rim % Trend by TD Order")
+
+    # 計算 Rim % 前幾高的針
+    rim_probes = df.copy()
+    rim_probes['On Rim'] = rim_probes[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+    rim_rank = rim_probes.groupby('DUT+Pad')['On Rim'].agg(['sum', 'count'])
+    rim_rank['On Rim %'] = rim_rank['sum'] / rim_rank['count']
+    top_rim_probes = rim_rank.sort_values(by='On Rim %', ascending=False).head(10).index.tolist()
+
+    selected_top_probe = st.selectbox("Select Top Rim % Probe", top_rim_probes)
+
+    if selected_top_probe:
+        probe_df2 = df[df['DUT+Pad'] == selected_top_probe]
+        probe_df2['TD Bin'] = pd.cut(probe_df2['TD Order'], bins=bins, labels=labels)
+        probe_df2['On Rim'] = probe_df2[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+        probe_rim2 = probe_df2.groupby('TD Bin')['On Rim'].agg(['sum', 'count'])
+        probe_rim2['On Rim %'] = probe_rim2['sum'] / probe_rim2['count'] * 100
+        probe_rim2 = probe_rim2.rename(columns={'sum': 'On Rim次數', 'count': '總測試數'})
+
+        st.markdown(f"#### 📌 {selected_top_probe} Rim % by TD Order Bin")
+        fig3, ax3 = plt.subplots(figsize=(8, 5))
+        sns.barplot(x=probe_rim2.index, y=probe_rim2['On Rim %'], ax=ax3, palette="rocket")
+        ax3.set_title(f"On Rim % Trend for Probe {selected_top_probe}")
+        ax3.set_ylabel("On Rim %")
+        ax3.set_xlabel("TD Order Bins")
+        ax3.grid(True, axis='y')
+        st.pyplot(fig3)
+        st.dataframe(probe_rim2.reset_index())
