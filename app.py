@@ -69,7 +69,7 @@ if uploaded_file:
     # =====================================
     # 🔍 TD Order 偏移趨勢與劣化分析區段
     # =====================================
-    st.subheader("TD Order Trend Analysis")
+    st.markdown("### 🔍 TD Order Trend Analysis")
 
     # 1. 計算 Vert / Horz Imbalance
     df['Vert Imbalance'] = (df['Prox Up'] - df['Prox Down']).abs()
@@ -101,7 +101,7 @@ if uploaded_file:
     # =====================================
     # 📉 On Rim % vs. TD Order 區段分析
     # =====================================
-    st.subheader("On Rim % vs. TD Order Analysis")
+    st.markdown("### 📉 On Rim % vs. TD Order Bins")
 
     # 建立 TD Order 分段
     bins = [0, 20, 40, 60, 80, 1000]
@@ -117,7 +117,7 @@ if uploaded_file:
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    st.markdown("#### 📊 Rim 發生率分段統計")
+    ---\n\n#### 📊 Rim 發生率分段統計
     fig, ax = plt.subplots(figsize=(8, 5))
     sns.barplot(x=rim_by_bin.index, y=rim_by_bin['On Rim %'], ax=ax, palette="viridis")
     ax.set_title("On Rim % vs. TD Order Bins (All Probes)")
@@ -144,7 +144,7 @@ if uploaded_file:
     # =====================================
     # 🔝 Rim % 前幾高針位的趨勢分析（按 TD Order 區段）
     # =====================================
-    st.subheader("Top Rim % Probes: Rim % Trend by TD Order")
+    st.markdown("### 🔝 Top Rim % Probes vs. TD Order")
 
     # 計算 Rim % 前幾高的針
     rim_probes = df.copy()
@@ -172,3 +172,56 @@ if uploaded_file:
         ax3.grid(True, axis='y')
         st.pyplot(fig3)
         st.dataframe(probe_rim2.reset_index())
+
+
+    # =====================================
+    # 🎨 表格標示：Rim % > 1% 標紅
+    # =====================================
+    def highlight_rim(val):
+        if isinstance(val, (int, float)) and val > 1:
+            return 'background-color: #ffcccc'
+        return ''
+
+    st.markdown("### 📋 Full Probe Rim Table with Highlighting")
+    styled_table = final_summary.style.applymap(highlight_rim, subset=['Rim %'])
+    st.dataframe(styled_table, use_container_width=True)
+
+
+    # =====================================
+    # 🧭 資料篩選與異常針位儀表板
+    # =====================================
+    st.markdown("### 🎛️ Filter Dashboard & Anomaly Detection")
+
+    # Sidebar 篩選參數
+    with st.sidebar:
+        st.header("🔎 篩選條件")
+
+        # Rim % 範圍
+        rim_min, rim_max = st.slider("Rim % 範圍", min_value=0.0, max_value=10.0, value=(0.0, 2.0), step=0.1)
+
+        # TD Order 範圍
+        td_min, td_max = int(df['TD Order'].min()), int(df['TD Order'].max())
+        td_range = st.slider("TD Order 範圍", min_value=td_min, max_value=td_max, value=(td_min, td_max), step=1)
+
+        # DUT 和 Pad 篩選（可選）
+        unique_duts = sorted(df['DUT#'].dropna().astype(int).unique())
+        selected_dut = st.selectbox("選擇 DUT", options=["All"] + [str(d) for d in unique_duts])
+        selected_pad = st.text_input("輸入 Pad #（留空則不篩選）", "")
+
+    # 應用篩選條件
+    filtered_df = df.copy()
+    filtered_df = filtered_df[(filtered_df['TD Order'] >= td_range[0]) & (filtered_df['TD Order'] <= td_range[1])]
+    filtered_summary = final_summary[(final_summary['Rim %'] >= rim_min / 100) & (final_summary['Rim %'] <= rim_max / 100)]
+
+    if selected_dut != "All":
+        filtered_summary = filtered_summary[filtered_summary['Dut'] == selected_dut]
+    if selected_pad.strip():
+        filtered_summary = filtered_summary[filtered_summary['Pad'] == selected_pad.strip()]
+
+    st.markdown("#### 📋 篩選後結果")
+    st.dataframe(filtered_summary)
+
+    # 顯示異常針位（推薦）
+    st.markdown("#### 🚨 異常針位推薦（Rim % > 1%）")
+    anomaly_df = final_summary[final_summary['Rim %'] > 0.01]
+    st.dataframe(anomaly_df)
