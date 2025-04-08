@@ -117,7 +117,7 @@ if uploaded_file:
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    ---
+    st.markdown("---")
 
 #### 📊 Rim 發生率分段統計
     fig, ax = plt.subplots(figsize=(8, 5))
