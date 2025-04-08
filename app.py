@@ -28,7 +28,14 @@ st.markdown("""
 
 uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
 
+
 if uploaded_file:
+    run_analysis = st.button("🚀 執行分析")
+    if run_analysis:
+
+    with st.spinner("分析中...請稍候"):
+
+
     df = pd.read_excel(uploaded_file)
     df = df.dropna(subset=['DUT#', 'Pad #'])
     df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
@@ -209,6 +216,11 @@ if uploaded_file:
         unique_duts = sorted(df['DUT#'].dropna().astype(int).unique())
         selected_dut = st.selectbox("選擇 DUT", options=["All"] + [str(d) for d in unique_duts])
         selected_pad = st.text_input("輸入 Pad #（留空則不篩選）", "")
+
+
+        run_filter = st.button("🔍 執行條件篩選")
+
+    if run_filter:
 
     # 應用篩選條件
     filtered_df = df.copy()
