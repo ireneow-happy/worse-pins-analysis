@@ -66,27 +66,27 @@ if uploaded_file:
 
 
 
-# =====================================
-# 🔍 TD Order 偏移趨勢與劣化分析區段
-# =====================================
-st.subheader("TD Order Trend Analysis")
+    # =====================================
+    # 🔍 TD Order 偏移趨勢與劣化分析區段
+    # =====================================
+    st.subheader("TD Order Trend Analysis")
 
 # 1. 計算 Vert / Horz Imbalance
 df['Vert Imbalance'] = (df['Prox Up'] - df['Prox Down']).abs()
 df['Horz Imbalance'] = (df['Prox Left'] - df['Prox Right']).abs()
 
 # 2. 顯示相關係數
-st.markdown("#### 📊 Pearson Correlation")
+    st.markdown("#### 📊 Pearson Correlation")
 from scipy.stats import pearsonr
 
 vert_corr, _ = pearsonr(df['TD Order'], df['Vert Imbalance'])
 horz_corr, _ = pearsonr(df['TD Order'], df['Horz Imbalance'])
 
-st.write(f"**TD Order vs. Vert Imbalance**: r = {vert_corr:.3f}")
+    st.write(f"**TD Order vs. Vert Imbalance**: r = {vert_corr:.3f}")
 st.write(f"**TD Order vs. Horz Imbalance**: r = {horz_corr:.3f}")
 
 # 3. 劣化速度：每根針的回歸斜率
-st.markdown("#### 🔼 Probe Degradation Rate (Slope)")
+    st.markdown("#### 🔼 Probe Degradation Rate (Slope)")
 
 from scipy.stats import linregress
 def compute_slope(group):
@@ -99,4 +99,4 @@ slope_df = df.groupby('DUT+Pad').apply(compute_slope).dropna().reset_index()
 slope_df.columns = ['DUT+Pad', 'Vert Imbalance Slope']
 slope_df = slope_df.sort_values(by='Vert Imbalance Slope', ascending=False)
 
-st.dataframe(slope_df.head(10), use_container_width=True)
+    st.dataframe(slope_df.head(10), use_container_width=True)
