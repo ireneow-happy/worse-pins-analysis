@@ -96,3 +96,65 @@ if uploaded_file:
     slope_df.columns = ['DUT+Pad', 'Vert Imbalance Slope']
     slope_df = slope_df.sort_values(by='Vert Imbalance Slope', ascending=False)
     st.dataframe(slope_df.head(10), use_container_width=True)
+
+
+    # =====================================
+    # 📉 On Rim % vs. TD Order 區段分析
+    # =====================================
+    st.subheader("On Rim % vs. TD Order Analysis")
+
+    # 建立 TD Order 分段
+    bins = [0, 20, 40, 60, 80, 1000]
+    labels = ['1–20', '21–40', '41–60', '61–80', '81+']
+    df['TD Bin'] = pd.cut(df['TD Order'], bins=bins, labels=labels)
+
+    # 計算 On Rim 次數與比例
+    df['On Rim'] = df[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+    rim_by_bin = df.groupby('TD Bin')['On Rim'].agg(['sum', 'count'])
+    rim_by_bin['On Rim %'] = rim_by_bin['sum'] / rim_by_bin['count'] * 100
+
+    # 繪圖
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    st.markdown("#### 📊 Rim 發生率分段統計")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=rim_by_bin.index, y=rim_by_bin['On Rim %'], ax=ax, palette="viridis")
+    ax.set_title("On Rim % vs. TD Order Bins (All Probes)")
+    ax.set_ylabel("On Rim %")
+    ax.set_xlabel("TD Order Bins")
+    ax.set_ylim(0, 100)
+    ax.grid(True, axis='y')
+    st.pyplot(fig)
+
+    # 顯示數據表格
+    rim_by_bin = rim_by_bin.rename(columns={'sum': 'On Rim次數', 'count': '總測試數'})
+    st.dataframe(rim_by_bin.reset_index())
+
+
+    # =====================================
+    # 🔍 個別探針的 Rim % 趨勢分析
+    # =====================================
+    st.subheader("Rim % Trend for Specific Probe")
+
+    unique_probes = df['DUT+Pad'].unique()
+    selected_probe = st.selectbox("Select Probe (DUT+Pad)", sorted(unique_probes))
+
+    if selected_probe:
+        probe_df = df[df['DUT+Pad'] == selected_probe]
+        probe_df['TD Bin'] = pd.cut(probe_df['TD Order'], bins=bins, labels=labels)
+        probe_df['On Rim'] = probe_df[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+        probe_rim = probe_df.groupby('TD Bin')['On Rim'].agg(['sum', 'count'])
+        probe_rim['On Rim %'] = probe_rim['sum'] / probe_rim['count'] * 100
+        probe_rim = probe_rim.rename(columns={'sum': 'On Rim次數', 'count': '總測試數'})
+
+        st.markdown(f"#### 📍 {selected_probe} Rim % by TD Order Bin")
+        fig2, ax2 = plt.subplots(figsize=(8, 5))
+        sns.barplot(x=probe_rim.index, y=probe_rim['On Rim %'], ax=ax2, palette="mako")
+        ax2.set_title(f"On Rim % Trend for Probe {selected_probe}")
+        ax2.set_ylabel("On Rim %")
+        ax2.set_xlabel("TD Order Bins")
+        ax2.set_ylim(0, 100)
+        ax2.grid(True, axis='y')
+        st.pyplot(fig2)
+        st.dataframe(probe_rim.reset_index())
