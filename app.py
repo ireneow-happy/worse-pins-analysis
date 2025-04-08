@@ -117,7 +117,9 @@ if uploaded_file:
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    ---\n\n#### 📊 Rim 發生率分段統計
+    ---
+
+#### 📊 Rim 發生率分段統計
     fig, ax = plt.subplots(figsize=(8, 5))
     sns.barplot(x=rim_by_bin.index, y=rim_by_bin['On Rim %'], ax=ax, palette="viridis")
     ax.set_title("On Rim % vs. TD Order Bins (All Probes)")
