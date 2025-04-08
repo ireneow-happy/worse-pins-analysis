@@ -33,43 +33,43 @@ if uploaded_file:
     run_analysis = st.button("🚀 執行分析")
     if run_analysis:
 
-    with st.spinner("分析中...請稍候"):
+        with st.spinner("分析中...請稍候"):
 
 
-    df = pd.read_excel(uploaded_file)
-    df = df.dropna(subset=['DUT#', 'Pad #'])
-    df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
+        df = pd.read_excel(uploaded_file)
+        df = df.dropna(subset=['DUT#', 'Pad #'])
+        df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
 
-    def detect_shift_direction(row):
-        directions = {
-            'Up': row['Prox Up'],
-            'Down': row['Prox Down'],
-            'Left': row['Prox Left'],
-            'Right': row['Prox Right']
-        }
-        return min(directions, key=directions.get)
+        def detect_shift_direction(row):
+            directions = {
+                'Up': row['Prox Up'],
+                'Down': row['Prox Down'],
+                'Left': row['Prox Left'],
+                'Right': row['Prox Right']
+            }
+            return min(directions, key=directions.get)
 
-    df['Shift Direction'] = df.apply(detect_shift_direction, axis=1)
-    direction_summary = df.groupby(['DUT+Pad', 'Shift Direction']).size().unstack(fill_value=0)
-    direction_summary['Total'] = direction_summary.sum(axis=1)
-    direction_columns = ['Up', 'Down', 'Left', 'Right']
-    direction_summary['Dominant'] = direction_summary[direction_columns].idxmax(axis=1)
-    direction_summary['Dominant %'] = direction_summary[direction_columns].max(axis=1) / direction_summary['Total']
+        df['Shift Direction'] = df.apply(detect_shift_direction, axis=1)
+        direction_summary = df.groupby(['DUT+Pad', 'Shift Direction']).size().unstack(fill_value=0)
+        direction_summary['Total'] = direction_summary.sum(axis=1)
+        direction_columns = ['Up', 'Down', 'Left', 'Right']
+        direction_summary['Dominant'] = direction_summary[direction_columns].idxmax(axis=1)
+        direction_summary['Dominant %'] = direction_summary[direction_columns].max(axis=1) / direction_summary['Total']
 
-    df['On Rim'] = df[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
-    rim_summary = df.groupby('DUT+Pad')['On Rim'].agg(['sum', 'count'])
-    rim_summary['Rim %'] = rim_summary['sum'] / rim_summary['count']
-    rim_summary = rim_summary.rename(columns={'sum': 'On Rim Count', 'count': 'Total Count'})
+        df['On Rim'] = df[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+        rim_summary = df.groupby('DUT+Pad')['On Rim'].agg(['sum', 'count'])
+        rim_summary['Rim %'] = rim_summary['sum'] / rim_summary['count']
+        rim_summary = rim_summary.rename(columns={'sum': 'On Rim Count', 'count': 'Total Count'})
 
-    direction_summary = direction_summary.reset_index()
-    direction_summary[['Dut', 'Pad']] = direction_summary['DUT+Pad'].str.split('+', expand=True)
-    final_summary = direction_summary.merge(rim_summary, on='DUT+Pad', how='left')
-    final_summary = final_summary[['Dut', 'Pad', 'Up', 'Down', 'Left', 'Right', 'Total', 'Dominant', 'Dominant %', 'On Rim Count', 'Total Count', 'Rim %']]
-    final_summary = final_summary.sort_values(by='Rim %', ascending=False)
+        direction_summary = direction_summary.reset_index()
+        direction_summary[['Dut', 'Pad']] = direction_summary['DUT+Pad'].str.split('+', expand=True)
+        final_summary = direction_summary.merge(rim_summary, on='DUT+Pad', how='left')
+        final_summary = final_summary[['Dut', 'Pad', 'Up', 'Down', 'Left', 'Right', 'Total', 'Dominant', 'Dominant %', 'On Rim Count', 'Total Count', 'Rim %']]
+        final_summary = final_summary.sort_values(by='Rim %', ascending=False)
 
-    st.subheader("Probe Shift Summary")
-    st.dataframe(final_summary)
-    st.download_button("Download Result as CSV", final_summary.to_csv(index=False), file_name="probe_shift_summary.csv")
+        st.subheader("Probe Shift Summary")
+        st.dataframe(final_summary)
+        st.download_button("Download Result as CSV", final_summary.to_csv(index=False), file_name="probe_shift_summary.csv")
 
 
 if uploaded_file:
