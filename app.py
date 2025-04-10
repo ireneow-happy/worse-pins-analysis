@@ -222,20 +222,20 @@ if uploaded_file:
 
     if run_filter:
 
-    # 應用篩選條件
-    filtered_df = df.copy()
-    filtered_df = filtered_df[(filtered_df['TD Order'] >= td_range[0]) & (filtered_df['TD Order'] <= td_range[1])]
-    filtered_summary = final_summary[(final_summary['Rim %'] >= rim_min / 100) & (final_summary['Rim %'] <= rim_max / 100)]
+        # 應用篩選條件
+        filtered_df = df.copy()
+        filtered_df = filtered_df[(filtered_df['TD Order'] >= td_range[0]) & (filtered_df['TD Order'] <= td_range[1])]
+        filtered_summary = final_summary[(final_summary['Rim %'] >= rim_min / 100) & (final_summary['Rim %'] <= rim_max / 100)]
 
-    if selected_dut != "All":
-        filtered_summary = filtered_summary[filtered_summary['Dut'] == selected_dut]
-    if selected_pad.strip():
-        filtered_summary = filtered_summary[filtered_summary['Pad'] == selected_pad.strip()]
+        if selected_dut != "All":
+            filtered_summary = filtered_summary[filtered_summary['Dut'] == selected_dut]
+        if selected_pad.strip():
+            filtered_summary = filtered_summary[filtered_summary['Pad'] == selected_pad.strip()]
 
-    st.markdown("#### 📋 篩選後結果")
-    st.dataframe(filtered_summary)
+        st.markdown("#### 📋 篩選後結果")
+        st.dataframe(filtered_summary)
 
-    # 顯示異常針位（推薦）
-    st.markdown("#### 🚨 異常針位推薦（Rim % > 1%）")
-    anomaly_df = final_summary[final_summary['Rim %'] > 0.01]
-    st.dataframe(anomaly_df)
+        # 顯示異常針位（推薦）
+        st.markdown("#### 🚨 異常針位推薦（Rim % > 1%）")
+        anomaly_df = final_summary[final_summary['Rim %'] > 0.01]
+        st.dataframe(anomaly_df)
