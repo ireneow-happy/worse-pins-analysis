@@ -30,7 +30,7 @@ if uploaded_file:
             df = df.dropna(subset=['DUT#', 'Pad #'])
             df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
 
-            # 基礎偏移與 Rim 分析
+            # 偏移方向分析
             def detect_shift_direction(row):
                 directions = {
                     'Up': row['Prox Up'],
@@ -61,11 +61,10 @@ if uploaded_file:
             st.subheader("Probe Shift Summary")
             st.dataframe(final_summary)
 
-            # TD Order Trend Analysis
+            # TD Order 趨勢分析
             st.markdown("### 🔍 TD Order Trend Analysis")
             df['Vert Imbalance'] = (df['Prox Up'] - df['Prox Down']).abs()
             df['Horz Imbalance'] = (df['Prox Left'] - df['Prox Right']).abs()
-
             vert_corr, _ = pearsonr(df['TD Order'], df['Vert Imbalance'])
             horz_corr, _ = pearsonr(df['TD Order'], df['Horz Imbalance'])
             st.write(f"**TD Order vs. Vert Imbalance**: r = {vert_corr:.3f}")
@@ -82,3 +81,51 @@ if uploaded_file:
             slope_df.columns = ['DUT+Pad', 'Vert Imbalance Slope']
             slope_df = slope_df.sort_values(by='Vert Imbalance Slope', ascending=False)
             st.dataframe(slope_df.head(10), use_container_width=True)
+
+            # Rim % vs TD Order 分段
+            st.markdown("### 📉 On Rim % vs. TD Order Bins")
+            bins = [0, 20, 40, 60, 80, 1000]
+            labels = ['1–20', '21–40', '41–60', '61–80', '81+']
+            df['TD Bin'] = pd.cut(df['TD Order'], bins=bins, labels=labels)
+            rim_by_bin = df.groupby('TD Bin')['On Rim'].agg(['sum', 'count'])
+            rim_by_bin['On Rim %'] = rim_by_bin['sum'] / rim_by_bin['count'] * 100
+            fig, ax = plt.subplots(figsize=(8, 5))
+            sns.barplot(x=rim_by_bin.index, y=rim_by_bin['On Rim %'], ax=ax, palette="viridis")
+            ax.set_title("On Rim % vs. TD Order Bins (All Probes)")
+            ax.set_ylabel("On Rim %")
+            ax.set_xlabel("TD Order Bins")
+            ax.grid(True, axis='y')
+            st.pyplot(fig)
+            rim_by_bin = rim_by_bin.rename(columns={'sum': 'On Rim次數', 'count': '總測試數'})
+            st.dataframe(rim_by_bin.reset_index())
+
+            # Top Rim % Probe 趨勢分析
+            st.markdown("### 🔝 Top Rim % Probes vs. TD Order")
+            rim_rank = df.groupby('DUT+Pad')['On Rim'].agg(['sum', 'count'])
+            rim_rank['On Rim %'] = rim_rank['sum'] / rim_rank['count']
+            top_rim_probes = rim_rank.sort_values(by='On Rim %', ascending=False).head(10).index.tolist()
+            selected_top_probe = st.selectbox("Select Top Rim % Probe", top_rim_probes)
+
+            if selected_top_probe:
+                probe_df2 = df[df['DUT+Pad'] == selected_top_probe]
+                probe_df2['TD Bin'] = pd.cut(probe_df2['TD Order'], bins=bins, labels=labels)
+                probe_df2['On Rim'] = probe_df2[['Prox Up', 'Prox Down', 'Prox Left', 'Prox Right']].min(axis=1) == 0
+                probe_rim2 = probe_df2.groupby('TD Bin')['On Rim'].agg(['sum', 'count'])
+                probe_rim2['On Rim %'] = probe_rim2['sum'] / probe_rim2['count'] * 100
+                fig2, ax2 = plt.subplots(figsize=(8, 5))
+                sns.barplot(x=probe_rim2.index, y=probe_rim2['On Rim %'], ax=ax2, palette="rocket")
+                ax2.set_title(f"On Rim % Trend for Probe {selected_top_probe}")
+                ax2.set_ylabel("On Rim %")
+                ax2.set_xlabel("TD Order Bins")
+                ax2.grid(True, axis='y')
+                st.pyplot(fig2)
+                st.dataframe(probe_rim2.reset_index())
+
+            # 標示高 Rim% 表格
+            st.markdown("### 📋 Full Probe Rim Table with Highlighting")
+            def highlight_rim(val):
+                if isinstance(val, (int, float)) and val > 1:
+                    return 'background-color: #ffcccc'
+                return ''
+            styled_table = final_summary.style.applymap(highlight_rim, subset=['Rim %'])
+            st.dataframe(styled_table, use_container_width=True)
