@@ -29,6 +29,7 @@ if uploaded_file and not st.session_state.analyzed:
 if st.session_state.analyzed:
 
     with st.spinner("分析中...請稍候"):
+    try:
 
         import matplotlib.pyplot as plt
         import seaborn as sns
@@ -75,3 +76,6 @@ if st.session_state.analyzed:
         horz_corr, _ = pearsonr(df['TD Order'], df['Horz Imbalance'])
         st.write(f"**TD Order vs. Vert Imbalance**: r = {vert_corr:.3f}")
         st.write(f"**TD Order vs. Horz Imbalance**: r = {horz_corr:.3f}")
+
+    except Exception as e:
+        st.error(f"❌ 分析發生錯誤: {str(e)}")
