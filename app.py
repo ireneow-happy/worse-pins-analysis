@@ -16,17 +16,17 @@ st.markdown("""
 
 uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
 
-if uploaded_file and 'df' not in st.session_state:
-    df = pd.read_excel(uploaded_file)
-    df = df.dropna(subset=['DUT#', 'Pad #'])
-    df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
-    st.session_state.df = df
+if uploaded_file:
+    st.session_state.uploaded_file = uploaded_file
     st.session_state.uploaded_filename = uploaded_file.name
+    st.success("已上傳檔案: " + uploaded_file.name)
 
-if 'df' in st.session_state:
-    st.success("已上傳檔案: " + st.session_state.get('uploaded_filename', ''))
-
+if 'uploaded_file' in st.session_state:
     if st.button("🚀 執行分析"):
+        df = pd.read_excel(st.session_state.uploaded_file)
+        df = df.dropna(subset=['DUT#', 'Pad #'])
+        df['DUT+Pad'] = df['DUT#'].astype(int).astype(str) + '+' + df['Pad #'].astype(int).astype(str)
+        st.session_state.df = df
         st.session_state.run_analysis = True
 
 if st.session_state.get('run_analysis', False):
