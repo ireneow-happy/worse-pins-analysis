@@ -30,7 +30,7 @@ if st.session_state.analyzed:
 
     with st.spinner("分析中...請稍候"):
     try:
-            try:
+        try:
         try:
 
         import matplotlib.pyplot as plt
@@ -81,6 +81,8 @@ if st.session_state.analyzed:
 
         except Exception as e:
         st.error(f"❌ 分析發生錯誤: {str(e)}")
+        except Exception as e:
+        st.error(f"❌ 分析錯誤: {str(e)}")
         except Exception as e:
         st.error(f"❌ 分析錯誤: {str(e)}")
     except Exception as e:
